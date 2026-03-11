@@ -76,3 +76,63 @@ export const joinRoom = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// user room details
+
+export const getUserRooms = async (req, res) => {
+  try {
+    const participants = await Participant.find({
+      user: req.user._id
+    }).populate("room");
+
+    const rooms = participants.map(p => ({
+      roomId: p.room._id,
+      name: p.room.name,
+      runtime: p.room.runtime,
+      role: p.role
+    }));
+
+    res.status(200).json({
+      rooms
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// room details
+
+export const getRoomDetails = async (req, res) => {
+  try {
+    const { roomId } = req.params;
+
+    const room = await Room.findById(roomId);
+
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    const participant = await Participant.findOne({
+      room: roomId,
+      user: req.user._id
+    });
+
+    if (!participant) {
+      return res.status(403).json({ message: "You are not part of this room" });
+    }
+
+    const participants = await Participant.find({ room: roomId })
+      .populate("user", "name email");
+
+    res.status(200).json({
+      room,
+      participants
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
