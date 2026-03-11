@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./modules/auth/auth.routes.js";
 import roomRoutes from "./modules/room/room.routes.js";
+import projectRoutes from "./modules/project/project.routes.js";
 
 const app = express();
 
@@ -15,5 +16,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 
 app.use("/api/room", roomRoutes);
+
+app.use("/api/project", projectRoutes);
 
 export default app;
