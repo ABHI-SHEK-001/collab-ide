@@ -44,23 +44,21 @@ io.use((socket, next) => {
 io.on("connection", (socket) => {
   console.log("User connected:", socket.userId);
 
-  // join a collaboration room
   socket.on("joinRoom", (roomId) => {
     socket.join(roomId);
-
-    // notify others that a user joined
-    socket.to(roomId).emit("userJoined", {
-      userId: socket.userId
-    });
-
     console.log(`User ${socket.userId} joined room ${roomId}`);
   });
 
-  // code change event
+  socket.on("leaveRoom", (roomId) => {
+    socket.leave(roomId);
+  });
+
+  // Code editing sync
   socket.on("codeChange", ({ roomId, code }) => {
     socket.to(roomId).emit("codeUpdate", code);
   });
 
+  // Cursor sync
   socket.on("cursorMove", ({ roomId, position }) => {
     socket.to(roomId).emit("cursorUpdate", {
       userId: socket.userId,
@@ -68,17 +66,31 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("leaveRoom", (roomId) => {
-    socket.leave(roomId);
-    console.log(`User ${socket.userId} left room ${roomId}`);
+  // File created
+  socket.on("fileCreated", ({ roomId, file }) => {
+    socket.to(roomId).emit("fileCreated", file);
+  });
+
+  // File deleted
+  socket.on("fileDeleted", ({ roomId, fileId }) => {
+    socket.to(roomId).emit("fileDeleted", fileId);
+  });
+
+  // File renamed
+  socket.on("fileRenamed", ({ roomId, file }) => {
+    socket.to(roomId).emit("fileRenamed", file);
+  });
+
+  // File content updated
+  socket.on("fileUpdated", ({ roomId, fileId, content }) => {
+    socket.to(roomId).emit("fileUpdated", {
+      fileId,
+      content
+    });
   });
 
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.userId);
-
-    socket.broadcast.emit("userLeft", {
-      userId: socket.userId
-    });
   });
 });
 

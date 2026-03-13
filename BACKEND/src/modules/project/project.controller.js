@@ -133,3 +133,83 @@ export const updateFileContent = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// delete file
+
+export const deleteFile = async (req, res) => {
+  try {
+    const { fileId } = req.params;
+    const { roomId } = req.body;
+
+    const project = await Project.findOne({ room: roomId });
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    const filesToDelete = new Set([fileId]);
+
+    let found = true;
+
+    while (found) {
+      found = false;
+
+      project.files.forEach(file => {
+        if (filesToDelete.has(file.parentId)) {
+          filesToDelete.add(file.id);
+          found = true;
+        }
+      });
+    }
+
+    project.files = project.files.filter(file => !filesToDelete.has(file.id));
+
+    await project.save();
+
+    res.status(200).json({
+      message: "File deleted successfully"
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// rename folders
+
+export const renameFile = async (req, res) => {
+  try {
+    const { fileId } = req.params;
+    const { roomId, newName } = req.body;
+
+    if (!newName) {
+      return res.status(400).json({ message: "file alreday exist" });
+    }
+
+    const project = await Project.findOne({ room: roomId });
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    const file = project.files.find(f => f.id === fileId);
+
+    if (!file) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    file.name = newName;
+
+    await project.save();
+
+    res.status(200).json({
+      message: "File renamed successfully",
+      file
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
